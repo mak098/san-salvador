@@ -67,16 +67,52 @@ class InscriptionModel extends AbstractDbOccurenceModel
         throw new ModelException("Operation non pris en charge");
     }
     /**
+     * {@inheritDoc}
+     * @see \Root\Models\AbstractDbOccurenceModel::update()
+     * @param Inscription $object
+     */
+    public function validate($object, $id): void{
+        Queries::updateData(
+            $this->getTableName(),            [
+                
+                Schema::INSCRIPTION['state'],
+                Schema::INSCRIPTION['validateInscription'],
+                Schema::INSCRIPTION['adminId'],
+                Schema::INSCRIPTION['confirmatDate'],
+                Schema::INSCRIPTION['confirmateTime'],
+                Schema::INSCRIPTION['modifDate'],
+                Schema::INSCRIPTION['motifTime']
+            ],
+            "id=?",
+            [
+                $object->getState() ? 1 : 0,
+                $object->getValidate() ? 1 : 0,
+                $object->getAdmin(),                
+                $object->getConfirmationDate()->format('Y-m-d'),
+                $object->getConfirmationTime()->format('H:i:s'),
+                $object->getLastModifDate()->format('Y-m-d'),
+                $object->getLastModifTime()->format('H:i:s'),
+                $object->getId()
+            ]
+        );
+    }
+
+    /**
      * verifie s'il existe une inscription a un pack activé
      * @return bool
      */
-    public function checkIfExistActivePack(string $userId): bool
+    public function checkValidated($userId=null): bool
     {
         $return = false;
         try {
+            $statement="";
             $user = Schema::INSCRIPTION['user'];
             $state = Schema::INSCRIPTION['validateInscription'];
-            $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE  {$user}=? AND {$state}=?", array($userId, 1));
+            if(is_null($userId)){
+                $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE  {$state}=?", array($userId, 1));
+            }else{
+                $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE  {$user}=? AND {$state}=?", array($userId, 1));
+            }
             if ($statement->fetch()) {
                 $return = true;
             }
@@ -91,13 +127,19 @@ class InscriptionModel extends AbstractDbOccurenceModel
      * verifie s'il existe une inscription a un a pack en  attente d'acivation
      * @return bool
      */
-    public function checkIfExistInActivePack(string $userId): bool
+    public function checkAwait($userId=null): bool
     {
         $return = false;
         try {
+            $statement ="";
             $user = Schema::INSCRIPTION['user'];
             $state = Schema::INSCRIPTION['validateInscription'];
-            $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE  {$user}=? AND {$state}=?", array($userId, 0));
+            if(is_null($userId)){
+                $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE {$state}=?", array($userId, 0));
+            }
+            else{
+                $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE  {$user}=? AND {$state}=?", array($userId, 0));
+             }            
             if ($statement->fetch()) {
                 $return = true;
             }
@@ -110,17 +152,21 @@ class InscriptionModel extends AbstractDbOccurenceModel
     }
     /**
      * revoie tout les informations des souscription en attante de validation
-     * @param string $userId
      * @throws ModelException
      * @return array
      */
-    public function findAwaitForValidation(string $userId): array
+    public function findAwait($userId=null): array
     {
         $return = array();
         try {
+            $statement="";
             $user = Schema::INSCRIPTION['user'];
             $validation = Schema::INSCRIPTION['validateInscription'];
-            $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE { $user}=? AND  { $validation}=?", array($userId, 0));
+            if(is_null($userId)){
+                $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE { $validation}=?", array(0));
+            }else{
+                $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE {$user}=? { $validation}=?", array($userId,0));
+            }            
             if ($row = $statement->fetch()) {
                 $return[] = new INSCRIPTION($row);
                 while ($row = $statement->fetch()) {
@@ -142,13 +188,17 @@ class InscriptionModel extends AbstractDbOccurenceModel
      * @throws ModelException
      * @return array
      */
-    public function findForValidation(string $userId): array
+    public function findValidated( $userId=null): array
     {
         $return = array();
         try {
             $user = Schema::INSCRIPTION['user'];
             $validation = Schema::INSCRIPTION['validateInscription'];
-            $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE { $user}=? AND  { $validation}=?", array($userId, 1));
+            if(is_null($userId)){
+                $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE { $validation}=?", array($userId, 1));
+            }else{
+                $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE { $user}=? AND  { $validation}=?", array($userId, 1));
+            }
             if ($row = $statement->fetch()) {
                 $return[] = new INSCRIPTION($row);
                 while ($row = $statement->fetch()) {
