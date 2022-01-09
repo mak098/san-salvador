@@ -185,19 +185,21 @@ class InscriptionModel extends AbstractDbOccurenceModel
     /**
      * revoie tout les informations des souscription deja valide
      * @param string $userId
+     * @param int $limit
+     * @param int $offset
      * @throws ModelException
      * @return array
      */
-    public function findValidated( $userId=null): array
+    public function findValidated( $userId=null,?int $limit = null, int $offset = 0): array
     {
         $return = array();
         try {
             $user = Schema::INSCRIPTION['user'];
             $validation = Schema::INSCRIPTION['validateInscription'];
             if(is_null($userId)){
-                $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE { $validation}=?", array($userId, 1));
+                $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE { $validation}=?". ($limit != null ? "LIMIT {$limit} OFFSET {$offset}" : ""), array($userId, 1));
             }else{
-                $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE { $user}=? AND  { $validation}=?", array($userId, 1));
+                $statement = Queries::executeQuery("SELECT * FROM {$this->getTableName()} WHERE { $user}=? AND  { $validation}=?". ($limit != null ? "LIMIT {$limit} OFFSET {$offset}" : ""), array($userId, 1));
             }
             if ($row = $statement->fetch()) {
                 $return[] = new INSCRIPTION($row);
